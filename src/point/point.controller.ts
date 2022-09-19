@@ -25,6 +25,9 @@ import { diskStorage } from 'multer';
 import { CsvParser } from 'nest-csv-parser';
 import * as fs from 'fs';
 import * as path from 'path';
+import { extname } from 'path';
+import { readFileSync } from 'fs';
+import { parse } from 'papaparse';
 
 @Controller('point')
 export class PointController {
@@ -43,13 +46,55 @@ export class PointController {
     return this.pointService.findAll();
   }
 
-  @Post(':add')
-  @UseInterceptors(FileInterceptor('csv'))
-  postAdd(@UploadedFile() profilexyz: Array<Express.Multer.File>): object {
-    console.log(profilexyz);
-    return {
-      message: 'file uploaded',
-    };
+  // @Post(':add')
+  // @UseInterceptors(FileInterceptor('csv' , ))
+  // postAdd(@UploadedFile() profilexyz: Array<Express.Multer.File>): object {
+  //   console.log(profilexyz);
+  //   return {
+  //     message: 'file uploaded',
+  //   };
+  // }
+
+  @Post('/file')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: 'uploads',
+        filename: (req, file, callback) => {
+          const uniqueSuffix =
+            Date.now() + '-' + Math.round(Math.random() * 1e9);
+          const ext = extname(file.originalname);
+          const filename = `${uniqueSuffix}${ext}`;
+          callback(null, filename);
+        },
+      }),
+    }),
+  )
+  async uploadFile() {
+    let dataObject = [];
+    const csvFile = readFileSync('uploads/1.csv');
+    const csvData = csvFile.toString();
+    const parsedCsv = await parse(csvData, {
+      header: true,
+      skipEmptyLines: true,
+      //  transformHeader:(header)=> header.toLowerCase().replace('#', '').trim(),
+      complete: (results) => results.data,
+    });
+    console.log('csv file', parsedCsv.data);
+    dataObject = parsedCsv.data;
+    dataObject.filter((element) => {
+      console.log('objects', element);
+
+      const newobj = {
+        id: element.id,
+        lat: element.lat,
+        lon: element.lon,
+        name: element.name,
+      };
+      console.log(newobj);
+
+      return this.pointService.createPointOnMap(newobj);
+    });
   }
 
   @Get('csv')

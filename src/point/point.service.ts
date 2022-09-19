@@ -30,9 +30,13 @@ export class PointService {
     return from(this.pointRepository.save(createPointDto));
   }
 
-  createcsv(createPointDto: CreatePointDto): Observable<CreatePointDto> {
+  createPointOnMap(createPointDto: CreatePointDto): Observable<CreatePointDto> {
     return from(this.pointRepository.save(createPointDto));
   }
+
+  // createcsv(createPointDto: CreatePointDto): Observable<CreatePointDto> {
+  //   return from(this.pointRepository.save(createPointDto));
+  // }
 
   findAll(): Observable<PointEntity[]> {
     return from(this.pointRepository.find());
